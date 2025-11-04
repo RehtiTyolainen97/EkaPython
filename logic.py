@@ -1,5 +1,6 @@
 #API-kutsut Hue-sillalle
 import requests
+import json
 from PIL import Image, ImageTk
 #Funktiot
 
@@ -8,7 +9,7 @@ def TestHueConnection(ip_address):
 
     url = f"http://{ip_address}/api/"
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=2)
         if response.status_code == 200:
             return True
         else:
@@ -29,3 +30,20 @@ def Make_Transparent(img_path, white_threshold=250):
             new_data.append((r, g, b, a))
     img.putdata(new_data)
     return img
+
+#Koitetaan tehdä mDNS-pohjainen sillan etsintä (ei toimi vielä)
+#Palauttaa nyt IP-osoitteen tai virheilmoituksen, voiko tehdä fiksummin?
+def BridgeDiscovery():
+    url = "https://discovery.meethue.com/"
+    answer = requests.get(url)
+    if answer.status_code == 200:
+        data = answer.json()
+        bridgeIP = data[0].get("internalipaddress")
+        print(bridgeIP)
+        return bridgeIP
+    else:
+        bridgeIP = "Discovery failed " + str(answer.status_code)
+        print(bridgeIP)
+        return bridgeIP
+
+
