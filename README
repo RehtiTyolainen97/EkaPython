@@ -1,0 +1,8 @@
+DESCRIPTION: 
+This is a hobby project made for controlling Philips Hue lights. Aim of the software is to be more customizable than the official app.
+
+INSTRUCTIONS:
+Control Panel - GUI to control and connect your Hue Devices
+
+Connect and Discovery - Software gives you the option to enter your Hue Bridge IP-address manually. If you don't know your IP-address you can find it out with a mDNS discovery tool or going to https://discovery.meethue.com/. Alternatively Discover-button can be used that will autofill the IP-address for the user. Please note that repeated Discover-commands will lead to Hue Bridge to
+refuse connections for a short while.
