@@ -43,7 +43,16 @@ def BridgeDiscovery():
         return bridgeIP
     else:
         bridgeIP = "Discovery failed " + str(answer.status_code)
-        print(bridgeIP)
         return bridgeIP
 
-
+#Redditissä sanottiin, että sertifikaatissa on SSL-ongelma, joten ohitetaan varmennus kunnes fixi tulee Philipsiltä
+#Tähän pitää miettiä ettei floodata loputtomalla määrällä käyttäjiä siltaa
+def GetUserAndKey(bridgeIP):
+    url = "https://"+bridgeIP+"/api"
+    print(url)
+    data = {
+    "devicetype": "eliaspc",
+    "generateclientkey": True
+    }
+    query = requests.post(url, json=data, verify=False)
+    print(query.json())
