@@ -28,4 +28,3 @@ class HueBridge(HueDevice):
     def __init__(self, productId, productName, deviceName, bridgeIP):
         super().__init__(productId, productName, deviceName)
         self.bridgeIP = bridgeIP
-

@@ -1,22 +1,30 @@
 #API-kutsut Hue-sillalle
 import requests
 import json
+#Verkkojuttuihin
+import socket
+#Kuvankäsittely
 from PIL import Image, ImageTk
+#Windows
+import os
 #Funktiot
 
 #Yhteystesti, input IP-osoite GUIsta
-def TestHueConnection(ip_address):    
-
-    url = f"http://{ip_address}/api/"
+def TestHueConnection(bridgeIP):
     try:
-        response = requests.get(url, timeout=2)
-        if response.status_code == 200:
-            return True
-        else:
-            return False
-    except requests.RequestException:
-        return False
-    
+        socket.inet_aton(bridgeIP)
+        try:    
+            url = f"https://{bridgeIP}/api/"
+            response = requests.get(url, timeout=2, verify=False)
+            return response.status_code
+        except requests.exceptions.Timeout:
+            return "Timeout"
+        except requests.exceptions.ConnectionError:
+            return "Unreachable"
+    except socket.error:
+        return "Invalid IP"
+
+
 #Muutetaan kuvat läpinäkyviksi, jos valkoinen tausta häiritsee
 def Make_Transparent(img_path, white_threshold=250):
     img = Image.open(img_path).convert("RGBA")
@@ -39,7 +47,9 @@ def BridgeDiscovery():
     if answer.status_code == 200:
         data = answer.json()
         bridgeIP = data[0].get("internalipaddress")
-        print(bridgeIP)
+        return bridgeIP
+    elif answer.status_code == 429:
+        bridgeIP = "Discovery failed: Too many requests (429)"
         return bridgeIP
     else:
         bridgeIP = "Discovery failed " + str(answer.status_code)
@@ -49,10 +59,27 @@ def BridgeDiscovery():
 #Tähän pitää miettiä ettei floodata loputtomalla määrällä käyttäjiä siltaa
 def GetUserAndKey(bridgeIP):
     url = "https://"+bridgeIP+"/api"
-    print(url)
     data = {
     "devicetype": "eliaspc",
     "generateclientkey": True
     }
-    query = requests.post(url, json=data, verify=False)
-    print(query.json())
+    env_path = "media/.env"
+
+    #Suoritetaan pyyntö, jos .env ei vielä ole API-tunnuksia
+    if not os.path.exists(env_path):
+        query = requests.post(url, json=data, verify=False)
+        #firstKey on joko error tai success
+        firstKey = next(iter(dict(query.json()[0])))
+
+        if firstKey == "error":
+            return False
+        else:
+            apiUsername = dict(query.json()[0])["success"]["username"]
+            apiClientkey = dict(query.json()[0])["success"]["clientkey"]
+            if not os.path.exists(env_path):
+                with open(env_path, 'w') as file:
+                    file.write(f"API_USERNAME={apiUsername}\n")
+                    file.write(f"API_CLIENTKEY={apiClientkey}\n")
+            return True
+    else:
+        return False
