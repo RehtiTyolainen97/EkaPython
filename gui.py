@@ -5,14 +5,18 @@ from tkinter import *
 from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
 import logic #logic.py tiedosto
+import os
 #######################################################################################################
 def ConnectionCheck():
     bridgeIP = ipAdrStr.get()
     connectionStatus = logic.TestHueConnection(bridgeIP)
     # Swapataan kuva tuloksen mukaan ja jos vika niin kerrotaan koodi
     if connectionStatus == 200:
+        if not os.path.exists("media/.env"):
+            pairingBtn.config(state="normal")
+        else:
+            pairingBtn.config(state="disabled")
         bgCanvas.itemconfig(status_img_item, image=okImg)
-        pairingBtn.config(state="normal")
     else:
         bgCanvas.itemconfig(status_img_item, image=notOkImg)
         pairingBtn.config(state='disabled')
@@ -31,6 +35,9 @@ def Pairing():
         success = logic.GetUserAndKey(ipAdrStr.get())
         if success == False:
             messagebox.showerror("Pairing Failed", "Button not pressed?")
+def FetchDevices():
+    logic.FetchCommand(ipAdrStr.get(), "eliaspc")
+
 
     
 #######################################################################################################
@@ -67,6 +74,10 @@ discoveryBtn.config(highlightthickness=1, borderwidth=1)
 pairingBtn = tk.Button(root, text="Pair", width=15, padx=0, pady=0, command=Pairing)
 pairingBtn.config(highlightthickness=1, borderwidth=1, state="disabled")
 
+#Nappi, joka hakee HUE-laitteet
+searchDevBtn = tk.Button(root, text="Fetch Devices", width=20, padx=0, pady=0, command=FetchDevices)
+searchDevBtn.config(highlightthickness=1, borderwidth=1)
+
 #Tähän tulee taulukko, joka näyttää löydetyt laitteet. Taulukossa on sarakkeet: laite, nimi, tila
 cols = ("Device","Name","State")
 table = ttk.Treeview(root, columns=cols, show='headings')
@@ -82,11 +93,15 @@ notOkImg = ImageTk.PhotoImage(notOkImg_pil)
 
 bgCanvas.create_window(20,93,window=ipAdrLbl, anchor="nw")
 bgCanvas.create_window(20,115,window=ipAdrEntry, anchor="nw")
+
 bgCanvas.create_window(20,136,window=ipAdrBtn, anchor="nw")
 bgCanvas.create_window(20,158,window=discoveryBtn, anchor="nw")
 bgCanvas.create_window(20,180,window=pairingBtn, anchor="nw")
+bgCanvas.create_window(300,260,window=searchDevBtn, anchor="center")
+
 bgCanvas.create_text(180,92, text="Bridge\nResponse", font=("Arial",10, "bold"), fill="black")
 bgCanvas.create_window(50,290,window=table, anchor="nw", width=500, height=300)
+
 
 #Yhteyskoe tulos TestHueConnection funktiosta (jos GET 200 YK OK)
 status_img_item = bgCanvas.create_image(150,110,image=notOkImg, anchor="nw")

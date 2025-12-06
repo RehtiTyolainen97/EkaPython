@@ -5,8 +5,9 @@ import json
 import socket
 #Kuvankäsittely
 from PIL import Image, ImageTk
-#Windows
+#Windows ja .env käsittely
 import os
+from dotenv import load_dotenv
 #Funktiot
 
 #Yhteystesti, input IP-osoite GUIsta
@@ -41,13 +42,17 @@ def Make_Transparent(img_path, white_threshold=250):
 
 #Koitetaan tehdä mDNS-pohjainen sillan etsintä (ei toimi vielä)
 #Palauttaa nyt IP-osoitteen tai virheilmoituksen, voiko tehdä fiksummin?
+#Ei toimi VPN päällä, tähän pitäisi rakentaa backuppina mDNS haku
 def BridgeDiscovery():
     url = "https://discovery.meethue.com/"
     answer = requests.get(url)
     if answer.status_code == 200:
         data = answer.json()
-        bridgeIP = data[0].get("internalipaddress")
-        return bridgeIP
+        if len(data) > 0:
+            bridgeIP = data[0].get("internalipaddress")
+            return bridgeIP
+        else:
+            return "Discovery failed: No bridges found"
     elif answer.status_code == 429:
         bridgeIP = "Discovery failed: Too many requests (429)"
         return bridgeIP
@@ -83,3 +88,25 @@ def GetUserAndKey(bridgeIP):
             return True
     else:
         return False
+#Hakee laitelistan sillalta ja jäsentää
+def FetchCommand(bridgeIp, apiKey):
+    load_dotenv(r'media\.env')
+    headers = {"hue-application-key": os.getenv("API_USERNAME")}
+    print(headers)
+    url = f'https://{bridgeIp}/clip/v2/resource/device'
+    deviceQuery = requests.get(url, verify=False, headers=headers)
+    print(deviceQuery.status_code)
+    queryData = deviceQuery.json().get("data")
+
+    products = {}
+
+    for device in queryData:
+        product_id = device["id"]
+        products[product_id] = {
+            "device": device["product_data"]["product_name"],
+            "device name": device["metadata"]["name"]
+        }
+    
+    for device_id, name in products.items():
+        print(device_id, " ", name)
+
